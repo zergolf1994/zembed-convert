@@ -1,0 +1,100 @@
+const { DataTypes } = require("sequelize");
+const sequelize = require("./conn");
+
+const Lists = sequelize.define(
+  "storage",
+  {
+    id: {
+      type: DataTypes.INTEGER(11),
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    uid: {
+      type: DataTypes.INTEGER(11),
+      defaultValue: 0,
+    },
+    active: {
+      type: DataTypes.TINYINT(1),
+      defaultValue: 1,
+    },
+    status: {
+      type: DataTypes.TINYINT(1),
+      defaultValue: 0,
+    },
+    sv_name: {
+      type: DataTypes.STRING(255),
+      defaultValue: "",
+    },
+    sv_ip: {
+      type: DataTypes.STRING(255),
+      defaultValue: "",
+    },
+    disk_percent: {
+      type: DataTypes.INTEGER(3),
+      defaultValue: 0,
+    },
+    disk_used: {
+      type: DataTypes.BIGINT(255),
+      defaultValue: 0,
+    },
+    disk_total: {
+      type: DataTypes.BIGINT(255),
+      defaultValue: 0,
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+    },
+  },
+  {
+    indexes: [
+      {
+        unique: false,
+        fields: ["sv_ip"],
+      },
+      {
+        unique: false,
+        fields: ["disk_used"],
+      },
+      {
+        unique: false,
+        fields: ["disk_total"],
+      },
+    ],
+  }
+);
+
+const Sets = sequelize.define(
+  "storage_set",
+  {
+    name: {
+      type: DataTypes.STRING(255),
+      defaultValue: "",
+    },
+    value: {
+      type: DataTypes.TEXT("long"),
+    },
+  },
+  {
+    timestamps: false,
+    indexes: [
+      {
+        unique: false,
+        fields: ["name"],
+      },
+      {
+        unique: false,
+        fields: ["storageId"],
+      },
+    ],
+  }
+);
+
+(async () => {
+  await Lists.sync({ force: false });
+  await Sets.sync({ force: false });
+})();
+
+module.exports = { Lists, Sets };
