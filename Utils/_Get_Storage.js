@@ -2,11 +2,12 @@
 const { Storage } = require(`../Models`);
 const { Op } = require("sequelize");
 
-module.exports = async () => {
+module.exports = async ({ storageId }) => {
   try {
     let where = {
-      active: 1,
+      id: storageId,
     };
+    
     let rows = await Storage.Lists.findOne({
       //subQuery: false,
       where,
@@ -31,7 +32,7 @@ module.exports = async () => {
     data.id = rows?.id;
     data.sv_ip = rows?.sv_ip;
     let sets = rows?.sets;
-    
+
     if (!sets.length) return;
 
     for (let key in sets) {

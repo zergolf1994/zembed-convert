@@ -71,7 +71,7 @@ exports.Backup = ({ file, save, row, dir, sv_backup, videoInfo }) => {
   });
 };
 
-exports.Storage = ({ file, save, row, dir, sv_storage }) => {
+exports.Storage = ({ file, save, row, dir, sv_storage, quality }) => {
   return new Promise(function (resolve, reject) {
     let server = {
       host: sv_storage?.sv_ip,
@@ -116,7 +116,7 @@ exports.Storage = ({ file, save, row, dir, sv_storage }) => {
           .then(async (response) => {
             let storage_data = {
               storageId: sv_storage?.id,
-              quality: "default",
+              quality: quality,
               fileId: row?.id,
             };
             await Files.Videos.create(storage_data);
@@ -126,13 +126,104 @@ exports.Storage = ({ file, save, row, dir, sv_storage }) => {
               { where: { id: row?.id } }
             );
             console.log("Transfer Storage", uploadTo);
+            resolve({ status: true });
             client.close(); // remember to close connection after you finish
           })
           .catch((error) => {
+            resolve({ status: false });
             client.close();
             console.log("error", error);
           });
       })
       .catch((e) => console.log(e));
+  });
+};
+exports.RemoveFileStorage = ({ file, row, sv_storage, quality }) => {
+  return new Promise(function (resolve, reject) {
+    let server = {
+      host: sv_storage?.sv_ip,
+      port: sv_storage?.port,
+      username: sv_storage?.username,
+      password: sv_storage?.password,
+    };
+
+    Client(server)
+      .then(async (client) => {
+        await client
+          .unlink(file)
+          .then(async () => {
+            await Files.Videos.update(
+              { active: 0 },
+              {
+                where: { fileID: row?.id, quality: quality },
+              }
+            );
+            await Files.Lists.update(
+              { e_code: 0, s_convert: 1 },
+              {
+                where: { id: row?.id },
+              }
+            );
+            resolve({ status: true });
+            client.close(); // remember to close connection after you finish
+          })
+          .catch((error) => {});
+      })
+      .catch((e) => console.log(e));
+  });
+};
+exports.CheckFileStorage = ({ sv_storage, slug }) => {
+  return new Promise(function (resolve, reject) {
+    let server = {
+      host: sv_storage?.sv_ip,
+      port: sv_storage?.port,
+      username: sv_storage?.username,
+      password: sv_storage?.password,
+    };
+    let path = `/home/files/${slug}`;
+    Client(server)
+      .then(async (client) => {
+        client
+          .list(path)
+          .then((result) => {
+            resolve(result);
+            client.close(); // remember to close connection after you finish
+          })
+          .catch((error) => {});
+      })
+      .catch((e) => reject(e));
+  });
+};
+exports.DownloadFileStorage = ({ sv_storage, slug, file_name }) => {
+  return new Promise(function (resolve, reject) {
+    let server = {
+      host: sv_storage?.sv_ip,
+      port: sv_storage?.port,
+      username: sv_storage?.username,
+      password: sv_storage?.password,
+    };
+    let path = `/home/files/${slug}/${file_name}`;
+    let save = `${global.dirPublic}/${slug}/${file_name}`;
+    if (!fs.existsSync(`${global.dirPublic}/${slug}`)) {
+      fs.mkdirSync(`${global.dirPublic}/${slug}`, { recursive: true });
+    }
+    Client(server)
+      .then(async (client) => {
+        client
+          .downloadFile(
+            path,
+            save
+            // options?: TransferOptions
+          )
+          .then((response) => {
+            console.log("response", response);
+            resolve({ status: true });
+            client.close(); // remember to close connection after you finish
+          })
+          .catch((error) => {
+            reject(error);
+          });
+      })
+      .catch((e) => reject(e));
   });
 };
