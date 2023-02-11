@@ -1,4 +1,6 @@
 "use strict";
+const path = require("path");
+const fs = require("fs-extra");
 
 const { Files, Servers, Procress } = require(`../Models`);
 const { Alert, CheckDisk, GetIP } = require(`../Utils`);
@@ -56,6 +58,22 @@ module.exports = async (req, res) => {
           silent: true,
         }
       );
+
+      //create task
+      let task = {
+        slug: slug,
+        download: false,
+        video_type: false,
+        convert_video: false,
+        convert_thumbnails: false,
+      };
+
+      fs.writeFileSync(
+        path.join(global.dir, "task.json"),
+        JSON.stringify(task),
+        "utf8"
+      );
+
       return res.json(Alert({ status: true, msg: `created` }, `s`));
     } else {
       return res.json(Alert({ status: false, msg: `db_err` }, `d`));
