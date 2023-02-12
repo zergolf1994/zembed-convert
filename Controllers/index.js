@@ -1,5 +1,6 @@
 module.exports = {
   RunTask: require("./runtask"),
+  DataVideo: require("./data.video"),
   Server: {
     Create: require("./server.create"),
   },

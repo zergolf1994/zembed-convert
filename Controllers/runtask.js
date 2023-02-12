@@ -10,11 +10,11 @@ module.exports = async (req, res) => {
     if (!slug) return res.json({ status: false, msg: "not_slug" });
 
     shell.exec(
-      `curl --write-out '%{http_code}' --silent --output /dev/null "http://127.0.0.1/start?slug=${slug}" &&
+      `curl --write-out '%{http_code} start' --silent --output /dev/null "http://127.0.0.1/start?slug=${slug}" &&
       sleep 2 &&
-      curl --write-out '%{http_code}' --silent --output /dev/null "http://127.0.0.1/download?slug=${slug}" &&
+      curl --write-out '%{http_code} download' --silent --output /dev/null "http://127.0.0.1/download?slug=${slug}" &&
       sleep 2 &&
-      curl --write-out '%{http_code}' --silent --output /dev/null "http://127.0.0.1/video-convert?slug=${slug}"
+      curl --write-out '%{http_code} video-convert' --silent --output /dev/null "http://127.0.0.1/video-convert?slug=${slug}"
       `,
       { async: false, silent: false },
       function (data) {}

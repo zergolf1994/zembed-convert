@@ -15,6 +15,7 @@ router.route("/download").get(Control.DL.Download);
 
 router.route("/video-convert").get(Control.CV.Video);
 router.route("/sprites").get(Control.CV.Sprites);
+router.route("/video-data").get(Control.DataVideo);
 router.all("*", async (req, res) => {
   res.status(500).end();
 });
