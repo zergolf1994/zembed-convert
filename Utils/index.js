@@ -23,4 +23,5 @@ module.exports = {
   CheckDisk: require("./_Check_Disk"),
   TimeSleep: require("./_TimeSleep"),
   GetIP: require("./_Get_IP"),
+  Task: require("./_Task"),
 };

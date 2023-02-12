@@ -4,7 +4,7 @@ const ffmpeg = require("fluent-ffmpeg");
 const fs = require("fs-extra");
 
 const { Files, Servers, Procress } = require(`../Models`);
-const { Alert, Get_Video_Data, GetIP, GetOne, SCP } = require(`../Utils`);
+const { Alert, Get_Video_Data, GetIP, GetOne, SCP, Task } = require(`../Utils`);
 
 module.exports = async (req, res) => {
   try {
@@ -64,7 +64,6 @@ module.exports = async (req, res) => {
       return res.json(Alert({ status: false, msg: "no video" }, `d`));
     }
     let video_data = await Get_Video_Data(inputPath);
-    //return res.json(video_data);
 
     let { width, height, duration, codec_name } = video_data?.streams[0];
     let list_quality;
@@ -77,7 +76,14 @@ module.exports = async (req, res) => {
       return res.json(
         Alert({ status: false, msg: `video size = ${height}` }, `d`)
       );
-    console.log("list_quality", list_quality);
+
+    let taskConvert = {};
+    for (const key in list_quality) {
+      let quality = list_quality[key];
+      taskConvert[`file_${quality}`] = 0;
+    }
+    await Task({ convert_video: taskConvert });
+
     for (const key in list_quality) {
       let quality = list_quality[key];
       let covert_s = await ConvertVideo({
@@ -102,52 +108,7 @@ module.exports = async (req, res) => {
         }
       }
     }
-    console.log("list_convert", list_convert);
-    // เช็คไฟล์ว่ามี backup ไหม  ถ้าไม่มี backup ให้ปิดไฟล์ default ถ้ามีให้ลบ default ออกจากเซิฟเวอร์
-
-    /*let rowChcek = await Files.Lists.findOne({
-      attributes: ["id"],
-      where: {
-        slug,
-      },
-      include: [
-        {
-          model: Files.Videos,
-          as: "videos",
-          attributes: ["quality", "storageId"],
-          required: false,
-        },
-        {
-          model: Files.Backups,
-          as: "backups",
-          attributes: ["type", "quality", "source"],
-          required: false,
-        },
-      ],
-    });
-
-    let checkVideos = rowChcek?.videos;
-    if (checkVideos > 0) {
-      for (const key in checkVideos) {
-        if (checkVideos.hasOwnProperty.call(checkVideos, key)) {
-          const vdo = checkVideos[key];
-          if(list_quality.includes(vdo?.name)){
-
-          }
-        }
-      }
-    }*/
-    /*let remove = await SCP.RemoveFileStorage({
-      file: `/home/files/${slug}/file_default.mp4`,
-      row,
-      sv_storage,
-      quality: "default",
-    });
-
-    console.log("convert video done", remove);
-    if (fs.existsSync(inputPath)) {
-      fs.unlinkSync(inputPath);
-    }*/
+    
     if (list_convert.length) {
       await Files.Lists.update(
         { e_code: 0, s_convert: 1 },
@@ -181,27 +142,28 @@ module.exports = async (req, res) => {
     return new Promise(function (resolve, reject) {
       let convert = ffmpeg(inputPath);
       convert.output(outPath);
-      if (codec_name != "h264") {
-        convert.videoCodec("libx264");
-      }
-      convert.outputOptions('-max_muxing_queue_size 1024')
+      convert.videoCodec("libx264");
+      convert.audioCodec('libfaac')
+      convert.outputOptions("-max_muxing_queue_size 1024 -crf 20 -preset slow -vf format=yuv420p -movflags +faststart");
       convert.size(`?x${quality}`);
       convert.on("start", () => {
         console.log("start", slug, quality);
       });
-      convert.on("progress", (d) => {
+      convert.on("progress", async (d) => {
         let npercent = Math.floor(d?.percent);
         if (percent != npercent) {
-          console.log("progress", slug, quality, npercent);
+          await updatePercent(quality, npercent);
+          //console.log("progress", slug, quality, npercent);
         }
         percent = Math.floor(d?.percent);
       });
-      convert.on("end", () => {
+      convert.on("end", async () => {
+        await updatePercent(quality, 100);
         console.log(`Done ${quality} ${(+new Date() - startTime) / 1000}s.`);
         resolve({ status: true, file: outPath });
       });
-      convert.on("error", (err, stdout, stderr) => {
-        console.log("outPath", outPath);
+      convert.on("error", async (err, stdout, stderr) => {
+        await updatePercent(quality, "error");
         fs.unlinkSync(outPath);
         resolve({ status: false });
       });
@@ -209,3 +171,21 @@ module.exports = async (req, res) => {
     });
   }
 };
+
+async function updatePercent(quality, percent) {
+  let newdata = {};
+  let task = await Task();
+  quality = Number(quality);
+  if (quality == 1080) {
+    newdata.file_1080 = parseInt(percent);
+  } else if (quality == 720) {
+    newdata.file_720 = parseInt(percent);
+  } else if (quality == 480) {
+    newdata.file_480 = parseInt(percent);
+  } else if (quality == 360) {
+    newdata.file_360 = parseInt(percent);
+  }
+  let taskUpdate = { ...task.convert_video, ...newdata };
+  await Task({ convert_video: taskUpdate });
+  return true;
+}

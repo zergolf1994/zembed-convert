@@ -1,15 +1,12 @@
 "use strict";
-const path = require("path");
-const fs = require("fs-extra");
 
 const { Files, Servers, Procress } = require(`../Models`);
-const { Alert, CheckDisk, GetIP } = require(`../Utils`);
+const { Alert, CheckDisk, GetIP, Task } = require(`../Utils`);
 const { Sequelize, Op } = require("sequelize");
 
 module.exports = async (req, res) => {
   try {
     const { slug } = req.query;
-
     if (!slug) return res.json({ status: false });
     const sv_ip = await GetIP();
     let server = await Servers.Lists.findOne({
@@ -67,12 +64,7 @@ module.exports = async (req, res) => {
         convert_video: false,
         convert_thumbnails: false,
       };
-
-      fs.writeFileSync(
-        path.join(global.dir, "task.json"),
-        JSON.stringify(task),
-        "utf8"
-      );
+      await Task(task);
 
       return res.json(Alert({ status: true, msg: `created` }, `s`));
     } else {

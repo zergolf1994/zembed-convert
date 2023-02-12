@@ -1,7 +1,7 @@
 "use strict";
 
 const { Files, Servers, Procress } = require(`../Models`);
-const { Alert, CheckDisk, GetIP, GetOne, SCP } = require(`../Utils`);
+const { Alert, CheckDisk, GetIP, GetOne, SCP, Task } = require(`../Utils`);
 const { Sequelize, Op } = require("sequelize");
 
 module.exports = async (req, res) => {
@@ -9,7 +9,8 @@ module.exports = async (req, res) => {
     const { slug } = req.query;
 
     if (!slug) return res.json({ status: false });
-
+    let task = await Task();
+    if (task?.download) return res.json({ status: false, msg: "downloaded" });
     let storageId;
 
     let row = await Files.Lists.findOne({

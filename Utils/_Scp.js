@@ -3,7 +3,7 @@
 const { Client } = require("node-scp");
 const fs = require("fs-extra");
 const { Files } = require(`../Models`);
-
+const Task = require("./_Task");
 exports.Backup = ({ file, save, row, dir, sv_backup, videoInfo }) => {
   return new Promise(function (resolve, reject) {
     let server = {
@@ -215,8 +215,8 @@ exports.DownloadFileStorage = ({ sv_storage, slug, file_name }) => {
             save
             // options?: TransferOptions
           )
-          .then((response) => {
-            console.log("response", response);
+          .then(async (response) => {
+            await Task({ download: true });
             resolve({ status: true });
             client.close(); // remember to close connection after you finish
           })

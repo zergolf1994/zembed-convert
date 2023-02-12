@@ -1,4 +1,5 @@
 module.exports = {
+  RunTask: require("./runtask"),
   Server: {
     Create: require("./server.create"),
   },
@@ -9,5 +10,6 @@ module.exports = {
   },
   CV: {
     Video: require("./cv.video"),
+    Sprites: require("./cv.sprites"),
   },
 };
