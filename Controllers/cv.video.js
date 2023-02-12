@@ -68,9 +68,9 @@ module.exports = async (req, res) => {
     let { width, height, duration, codec_name } = video_data?.streams[0];
     let list_quality;
     let list_convert = [];
-    if (height >= 1080) list_quality = [1080, 720, 480, 360];
-    else if (height >= 720) list_quality = [720, 480, 360];
-    else if (height >= 480) list_quality = [480, 360];
+    if (height >= 1080) list_quality = [360, 480, 720, 1080];
+    else if (height >= 720) list_quality = [360, 480, 720];
+    else if (height >= 480) list_quality = [360, 480];
     else if (height >= 360) list_quality = [360];
     else
       return res.json(
