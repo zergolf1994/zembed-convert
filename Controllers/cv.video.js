@@ -211,6 +211,11 @@ module.exports = async (req, res) => {
       let convert = ffmpeg(inputPath);
       convert.output(outPath);
       convert.size(video_size);
+      convert.outputOptions([
+        "-crf 32",
+        "-movflags faststart",
+        "-max_muxing_queue_size 1024",
+      ]);
       convert.on("start", () => {
         console.log("start", slug, quality);
       });
