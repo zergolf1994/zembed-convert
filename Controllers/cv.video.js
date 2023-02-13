@@ -60,7 +60,7 @@ module.exports = async (req, res) => {
 
     /// start
 
-    let inputPath = `${global.dirPublic}/${slug}/file_default.mp4`;
+    let inputPath = `${global.dirPublic}/${slug}/download_default`;
     if (!fs.existsSync(inputPath)) {
       return res.json(Alert({ status: false, msg: "no video" }, `d`));
     }
@@ -76,19 +76,13 @@ module.exports = async (req, res) => {
       else if (height >= 720) list_quality = [720, 480, 360];
       else if (height >= 480) list_quality = [480, 360];
       else if (height >= 360) list_quality = [360];
-      else
-        return res.json(
-          Alert({ status: false, msg: `video size height = ${height}` }, `d`)
-        );
+      else list_quality = [height];
     } else {
       if (width >= 1080) list_quality = [1080, 720, 480, 360];
       else if (width >= 720) list_quality = [720, 480, 360];
       else if (width >= 480) list_quality = [480, 360];
       else if (width >= 360) list_quality = [360];
-      else
-        return res.json(
-          Alert({ status: false, msg: `video size width = ${width}` }, `d`)
-        );
+      else list_quality = [width];
     }
     let taskConvert = {};
     for (const key in list_quality) {

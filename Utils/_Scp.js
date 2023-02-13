@@ -203,7 +203,7 @@ exports.DownloadFileStorage = ({ sv_storage, slug, file_name }) => {
       password: sv_storage?.password,
     };
     let path = `/home/files/${slug}/${file_name}`;
-    let save = `${global.dirPublic}/${slug}/${file_name}`;
+    let save = `${global.dirPublic}/${slug}/download_default`;
     if (!fs.existsSync(`${global.dirPublic}/${slug}`)) {
       fs.mkdirSync(`${global.dirPublic}/${slug}`, { recursive: true });
     }
