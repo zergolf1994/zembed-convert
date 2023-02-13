@@ -2,6 +2,7 @@
 
 const ffmpeg = require("fluent-ffmpeg");
 const fs = require("fs-extra");
+const shell = require("shelljs");
 
 const { Files, Servers, Procress } = require(`../Models`);
 const { Alert, Get_Video_Data, GetIP, GetOne, SCP, Task } = require(`../Utils`);
@@ -71,16 +72,24 @@ module.exports = async (req, res) => {
       list_quality = [];
     if (width > height) {
       video_type = "horizontal";
+      if (height >= 1080) list_quality = [1080, 720, 480, 360];
+      else if (height >= 720) list_quality = [720, 480, 360];
+      else if (height >= 480) list_quality = [480, 360];
+      else if (height >= 360) list_quality = [360];
+      else
+        return res.json(
+          Alert({ status: false, msg: `video size height = ${height}` }, `d`)
+        );
+    } else {
+      if (width >= 1080) list_quality = [1080, 720, 480, 360];
+      else if (width >= 720) list_quality = [720, 480, 360];
+      else if (width >= 480) list_quality = [480, 360];
+      else if (width >= 360) list_quality = [360];
+      else
+        return res.json(
+          Alert({ status: false, msg: `video size width = ${width}` }, `d`)
+        );
     }
-    if (height >= 1080) list_quality = [1080, 720, 480, 360];
-    else if (height >= 720) list_quality = [720, 480, 360];
-    else if (height >= 480) list_quality = [480, 360];
-    else if (height >= 360) list_quality = [360];
-    else
-      return res.json(
-        Alert({ status: false, msg: `video size = ${height}` }, `d`)
-      );
-
     let taskConvert = {};
     for (const key in list_quality) {
       let quality = list_quality[key];
@@ -126,9 +135,9 @@ module.exports = async (req, res) => {
         row,
         dir: `/home/files/${slug}`,
         sv_storage,
-        quality,
+        quality: list_quality[0],
       });
-      list_convert.push(quality);
+      list_convert.push(list_quality[0]);
     }
     // ประมวผล
     for (const key in list_quality) {
@@ -174,7 +183,11 @@ module.exports = async (req, res) => {
         }
       );
     }
-
+    shell.exec(
+      `sudo rm -rf ${global.dirPublic}/*`,
+      { async: false, silent: false },
+      function (data) {}
+    );
     await Servers.Lists.update(
       { status: 0 },
       { where: { id: process?.serverId } }
@@ -200,7 +213,7 @@ module.exports = async (req, res) => {
     return new Promise(function (resolve, reject) {
       let video_size =
         video_type == "horizontal" ? `?x${quality}` : `${quality}x?`;
-        
+
       let convert = ffmpeg(inputPath);
       convert.output(outPath);
       convert.size(video_size);
@@ -338,6 +351,7 @@ module.exports = async (req, res) => {
       });
       convert.on("end", async () => {
         await updatePercent(action, 100);
+        await updatePercent(quality, 100);
         console.log(`Done ${action} ${(+new Date() - startTime) / 1000}s.`);
         // upload to storage
         resolve({ status: true, file: outPath });
